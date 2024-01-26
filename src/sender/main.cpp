@@ -40,16 +40,21 @@ int main(int argc, char** argv)
     video_frame.yres = capture.get(cv::CAP_PROP_FRAME_HEIGHT);
     video_frame.FourCC = NDIlib_FourCC_type_BGRA;
     video_frame.p_data = (uint8_t*)malloc(video_frame.xres * video_frame.yres * 4);
+    video_frame.frame_rate_N = 10000;
+    video_frame.frame_rate_D = 1001;
+
 
     cv::Mat frame;
     cv::namedWindow("Webcam");
     cv::Mat ch[4];
+    char overlay_text[50];
     char metadata[100];
     int frame_counter = 0;
 
     for (int i = 0; i < 100; i++) {
         capture >> frame;
-        std::cout << frame.size().height << frame.size().width << std::endl;
+        sprintf_s(overlay_text, "%04d", frame_counter);
+        cv::putText(frame, overlay_text, cv::Point(25, 25), cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0, 255, 255), 2);
         if (frame.type() != CV_8UC4) {
             std::cout << "It is not a 4 channel image" << std::endl;
             cv::cvtColor(frame, frame, cv::COLOR_BGR2BGRA);
@@ -61,14 +66,14 @@ int main(int argc, char** argv)
             memcpy((void*)video_frame.p_data, frame.ptr(), static_cast<size_t>(video_frame.xres * video_frame.yres * 4));
         /*if (video_frame.p_data)
             memset((void*)video_frame.p_data, (i & 1) ? 255 : 0, static_cast<size_t>(video_frame.xres * video_frame.yres * 4));*/
-        sprintf_s(metadata, "<framestamp>%d</framestamp>", frame_counter);
+        sprintf_s(metadata, "<Framestamp>%d</Framestamp>", frame_counter);
         video_frame.p_metadata = metadata;
 
         NDIlib_send_send_video_v2(sender, &video_frame);
 
         cv::imshow("Webcam", frame);
         
-        cv::waitKey(10);
+        cv::waitKey(100);
         frame_counter++;
     }
 
